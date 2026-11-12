@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Finca Los Sauces - Dashboard de Control Operativo</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#064e3b">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Puente GAS con versión para forzar actualización -->
+    <script src="bridge.js?v=10050"></script>
+</head>
+<body class="h-full flex flex-col text-slate-800">
+
+    <div id="header-container"></div>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8">
+        <div id="dashboard-container"></div>
+        <div id="pos-container"></div>
+        <div id="cashflow-container"></div>
+        <div id="loans-container"></div>
+        <div id="personal-container"></div>
+        <div id="map-container"></div>
+    </main>
+
+    <div id="modals-container"></div>
+
+    <div id="loader" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex flex-col justify-center items-center z-50" style="display: none;">
+        <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center space-y-4 max-w-xs text-center">
+            <div class="relative w-12 h-12">
+                <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin"></div>
+            </div>
+            <div>
+                <p class="font-bold text-slate-800" id="loaderTitle">Cargando...</p>
+                <p class="text-xs text-slate-500 mt-1" id="loaderMessage">Por favor espere un momento</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      async function loadPartials() {
+        const files = [
+          { id: 'header-container', file: 'Header.txt' },
+          { id: 'dashboard-container', file: 'ViewDashboard.txt' },
+          { id: 'pos-container', file: 'ViewPOS.txt' },
+          { id: 'cashflow-container', file: 'ViewCashflow.txt' },
+          { id: 'loans-container', file: 'ViewLoans.txt' },
+          { id: 'personal-container', file: 'ViewPersonalExpenses.txt' },
+          { id: 'map-container', file: 'ViewMap.txt' },
+          { id: 'modals-container', file: 'Modals.txt' }
+        ];
+        for (const { id, file } of files) {
+          try {
+            const res = await fetch(file);
+            const html = await res.text();
+            document.getElementById(id).innerHTML = html;
+          } catch (e) {
+            console.warn('No se pudo cargar:', file, e);
+          }
+        }
+        
+        // Una vez cargados los HTML, cargamos el JavaScript principal
+        const script = document.createElement('script');
+        script.src = 'JavaScript.txt'; // <-- Quitamos el ?v=10050
+        script.onload = () => {
+            // Iniciar la app solo después de que el JS y el HTML estén listos
+            if (typeof initApp === 'function') initApp();
+        };
+        document.body.appendChild(script);
+      }
+      
+      // Iniciar la carga
+      loadPartials();
+    </script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then((reg) => console.log('SW registrado:', reg.scope))
+            .catch((err) => console.warn('SW falló:', err));
+        });
+      }
+    </script>
+</body>
+</html>
